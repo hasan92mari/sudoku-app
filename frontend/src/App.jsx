@@ -24,6 +24,7 @@ const translations = {
     startGame: 'Start Game',
     leaderboard: 'Leaderboard',
     back: 'Back',
+    exit: 'Exit',
     difficulty: 'Difficulty',
     easy: 'Easy',
     hard: 'Hard',
@@ -61,6 +62,7 @@ const translations = {
     startGame: 'ابدأ اللعبة',
     leaderboard: 'المتصدرون',
     back: 'عودة',
+    exit: 'خروج',
     difficulty: 'الصعوبة',
     easy: 'سهل',
     hard: 'صعب',
@@ -98,6 +100,7 @@ const translations = {
     startGame: 'Spiel starten',
     leaderboard: 'Bestenliste',
     back: 'Zurück',
+    exit: 'Beenden',
     difficulty: 'Schwierigkeit',
     easy: 'Einfach',
     hard: 'Schwer',
@@ -185,6 +188,7 @@ function App() {
   const [message, setMessage] = useState('');
   const [adminPlayers, setAdminPlayers] = useState([]);
   const [banForm, setBanForm] = useState({ playerName: '', durationMinutes: '30' });
+  const [hasRestoredSession, setHasRestoredSession] = useState(false);
 
   const t = translations[language] ?? translations.en;
 
@@ -203,8 +207,56 @@ function App() {
       setTheme(savedSession.theme);
     }
 
+    if (savedSession.difficulty) {
+      setDifficulty(savedSession.difficulty);
+    }
+
+    if (savedSession.screen) {
+      setScreen(savedSession.screen);
+    }
+
+    if (savedSession.grid) {
+      setGrid(savedSession.grid);
+    }
+
+    if (savedSession.seconds) {
+      setSeconds(savedSession.seconds);
+    }
+
+    if (savedSession.isGameStarted !== undefined) {
+      setIsGameStarted(Boolean(savedSession.isGameStarted));
+    }
+
+    if (savedSession.banInfo) {
+      setBanInfo(savedSession.banInfo);
+    }
+
+    if (savedSession.message) {
+      setMessage(savedSession.message);
+    }
+
+    setHasRestoredSession(true);
     fetchLeaderboardData();
   }, []);
+
+  useEffect(() => {
+    if (!hasRestoredSession) {
+      return;
+    }
+
+    saveSessionLocally({
+      playerName,
+      language,
+      theme,
+      difficulty,
+      screen,
+      grid,
+      seconds,
+      isGameStarted,
+      banInfo,
+      message
+    });
+  }, [hasRestoredSession, playerName, language, theme, difficulty, screen, grid, seconds, isGameStarted, banInfo, message]);
 
   useEffect(() => {
     document.title = t.appTitle;
@@ -514,7 +566,10 @@ function App() {
               )}
             </div>
 
-            <button className="btn finish-btn" onClick={submitScore}>{t.submitResult}</button>
+            <div className="button-row">
+              <button className="btn finish-btn" onClick={submitScore}>{t.submitResult}</button>
+              <button className="btn secondary" onClick={openSetup}>{t.exit}</button>
+            </div>
           </div>
         )}
 
