@@ -1,5 +1,5 @@
 # Stage 1: install dependencies
-FROM node:20-alpine AS build-stage
+FROM node:20-bookworm-slim AS build-stage
 WORKDIR /app
 
 COPY package*.json ./
@@ -9,13 +9,16 @@ COPY . .
 RUN rm -rf node_modules
 
 # Stage 2: production runtime
-FROM node:20-alpine
+FROM node:20-bookworm-slim
 WORKDIR /app
 
 ENV NODE_ENV=production
 
+RUN apt-get update && apt-get upgrade -y && rm -rf /var/lib/apt/lists/*
+
 COPY package*.json ./
-RUN npm install --omit=dev
+RUN npm install --omit=dev --package-lock=false \
+    && rm -rf /usr/local/lib/node_modules/npm /usr/local/bin/npm /usr/local/bin/npx
 
 COPY --from=build-stage /app .
 
