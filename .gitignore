@@ -1,3 +1,13 @@
 node_modules/
 .env
-dist/
+.env.*
+!.env.example
+frontend/node_modules/
+backend/node_modules/
+frontend/dist/
+backend/dist/
+*.log
+.DS_Store
+redis-data/
+coverage/
+.vite/
