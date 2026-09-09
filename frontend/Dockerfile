@@ -22,6 +22,8 @@ RUN npm install --omit=dev
 COPY --from=build-stage /app/dist ./dist
 COPY --from=build-stage /app/server.js ./server.js
 
+USER node
+
 EXPOSE 80
 
 CMD ["node", "server.js"]
