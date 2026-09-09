@@ -6,7 +6,7 @@ const dotenv = require('dotenv');
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5001;
 const REDIS_URL = process.env.REDIS_URL || 'redis://localhost:6379';
 const SESSION_TTL_SECONDS = Number(process.env.SESSION_TTL_SECONDS || 86400);
 const SESSION_PREFIX = 'session:';
@@ -335,9 +335,9 @@ app.post('/api/admin/ban', async (req, res) => {
 });
 
 (async () => {
-  await initRedis();
-
   app.listen(PORT, () => {
     console.log(`Server is breathing on port ${PORT}`);
   });
+
+  await initRedis();
 })();

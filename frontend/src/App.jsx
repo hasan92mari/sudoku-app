@@ -175,75 +175,50 @@ const formatTime = (seconds) => {
 };
 
 function App() {
-  const [playerName, setPlayerName] = useState('');
-  const [language, setLanguage] = useState('en');
-  const [theme, setTheme] = useState('dark');
-  const [difficulty, setDifficulty] = useState('Easy');
-  const [screen, setScreen] = useState('setup');
-  const [grid, setGrid] = useState(createEmptyGrid());
-  const [seconds, setSeconds] = useState(0);
-  const [isGameStarted, setIsGameStarted] = useState(false);
+  const getStoredSession = () => {
+    try {
+      return JSON.parse(sessionStorage.getItem(STORAGE_KEY) || '{}');
+    } catch {
+      return {};
+    }
+  };
+
+  const storedSession = getStoredSession();
+
+  const [playerName, setPlayerName] = useState(storedSession.playerName || '');
+  const [language, setLanguage] = useState(storedSession.language || 'en');
+  const [theme, setTheme] = useState(storedSession.theme || 'dark');
+  const [difficulty, setDifficulty] = useState(storedSession.difficulty || 'Easy');
+  const [screen, setScreen] = useState(storedSession.screen || 'setup');
+  const [grid, setGrid] = useState(storedSession.grid || createEmptyGrid());
+  const [seconds, setSeconds] = useState(storedSession.seconds || 0);
+  const [isGameStarted, setIsGameStarted] = useState(Boolean(storedSession.isGameStarted));
   const [leaderboard, setLeaderboard] = useState([]);
-  const [banInfo, setBanInfo] = useState(null);
-  const [message, setMessage] = useState('');
+  const [banInfo, setBanInfo] = useState(storedSession.banInfo || null);
+  const [message, setMessage] = useState(storedSession.message || '');
   const [adminPlayers, setAdminPlayers] = useState([]);
   const [banForm, setBanForm] = useState({ playerName: '', durationMinutes: '30' });
-  const [hasRestoredSession, setHasRestoredSession] = useState(false);
 
   const t = translations[language] ?? translations.en;
 
+  const saveSessionLocally = (sessionData) => {
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(sessionData));
+  };
+
+  async function fetchLeaderboardData() {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/leaderboard`);
+      setLeaderboard(response.data || []);
+    } catch (error) {
+      console.error('Fetch leaderboard error:', error);
+    }
+  }
+
   useEffect(() => {
-    const savedSession = JSON.parse(sessionStorage.getItem(STORAGE_KEY) || '{}');
-
-    if (savedSession.playerName) {
-      setPlayerName(savedSession.playerName);
-    }
-
-    if (savedSession.language) {
-      setLanguage(savedSession.language);
-    }
-
-    if (savedSession.theme) {
-      setTheme(savedSession.theme);
-    }
-
-    if (savedSession.difficulty) {
-      setDifficulty(savedSession.difficulty);
-    }
-
-    if (savedSession.screen) {
-      setScreen(savedSession.screen);
-    }
-
-    if (savedSession.grid) {
-      setGrid(savedSession.grid);
-    }
-
-    if (savedSession.seconds) {
-      setSeconds(savedSession.seconds);
-    }
-
-    if (savedSession.isGameStarted !== undefined) {
-      setIsGameStarted(Boolean(savedSession.isGameStarted));
-    }
-
-    if (savedSession.banInfo) {
-      setBanInfo(savedSession.banInfo);
-    }
-
-    if (savedSession.message) {
-      setMessage(savedSession.message);
-    }
-
-    setHasRestoredSession(true);
     fetchLeaderboardData();
   }, []);
 
   useEffect(() => {
-    if (!hasRestoredSession) {
-      return;
-    }
-
     saveSessionLocally({
       playerName,
       language,
@@ -256,7 +231,7 @@ function App() {
       banInfo,
       message
     });
-  }, [hasRestoredSession, playerName, language, theme, difficulty, screen, grid, seconds, isGameStarted, banInfo, message]);
+  }, [playerName, language, theme, difficulty, screen, grid, seconds, isGameStarted, banInfo, message]);
 
   useEffect(() => {
     document.title = t.appTitle;
@@ -294,19 +269,6 @@ function App() {
 
     return () => clearInterval(timer);
   }, [screen, isGameStarted]);
-
-  const saveSessionLocally = (sessionData) => {
-    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(sessionData));
-  };
-
-  const fetchLeaderboardData = async () => {
-    try {
-      const response = await axios.get(`${API_BASE_URL}/leaderboard`);
-      setLeaderboard(response.data || []);
-    } catch (error) {
-      console.error('Fetch leaderboard error:', error);
-    }
-  };
 
   const fetchAdminPlayers = async () => {
     try {

@@ -84,10 +84,10 @@ docker compose down
 The sample environment file includes the most common variables:
 
 ```env
-PORT=5000
+PORT=5001
 REDIS_URL=redis://localhost:6379
 SESSION_TTL_SECONDS=86400
-VITE_API_BASE_URL=http://localhost:5000/api
+VITE_API_BASE_URL=http://localhost:5001/api
 ```
 
 For cloud deployment, replace `REDIS_URL` and `VITE_API_BASE_URL` with the values of your managed Redis instance and deployed backend URL.

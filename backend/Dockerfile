@@ -6,6 +6,7 @@ COPY package*.json ./
 RUN npm install
 
 COPY . .
+RUN rm -rf node_modules
 
 # Stage 2: production runtime
 FROM node:20-alpine

@@ -19,19 +19,8 @@ const checkRedis = async () => {
       await frontendRedis.connect();
     }
     return true;
-  } catch (error) {
+  } catch {
     return false;
-  }
-};
-
-const waitForReady = async () => {
-  try {
-    if (!frontendRedis.isOpen) {
-      await frontendRedis.connect();
-    }
-    console.log('Frontend Redis connected successfully.');
-  } catch (error) {
-    console.error('Frontend Redis connection failed:', error);
   }
 };
 
@@ -77,10 +66,6 @@ app.use((req, res) => {
   res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });
 
-(async () => {
-  await waitForReady();
-
-  app.listen(PORT, () => {
-    console.log(`Frontend server is running on port ${PORT}`);
-  });
-})();
+app.listen(PORT, () => {
+  console.log(`Frontend server is running on port ${PORT}`);
+});
