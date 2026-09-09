@@ -1,36 +1,34 @@
 # Stage 1: Build the React application
-FROM node:18-alpine AS build-stage
+FROM node:20-bookworm-slim AS build-stage
 WORKDIR /app
+
+ARG VITE_API_BASE_URL=/api
+ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
+
 COPY package*.json ./
 RUN npm install
 COPY . .
 RUN npm run build
 
-# Stage 2: Serve the app using Nginx
-FROM nginx:stable-alpine
+# Stage 2: Run the app with Node.js and serve static files
+FROM node:20-bookworm-slim
+WORKDIR /app
 
-# Set up the proxy without the trailing slash to preserve the exact path
-RUN printf 'server {\n\
-    listen 80;\n\
-    location / {\n\
-        root /usr/share/nginx/html;\n\
-        index index.html index.htm;\n\
-        try_files $uri $uri/ /index.html;\n\
-    }\n\
-    location /api/ {\n\
-        proxy_pass http://backend:5000;\n\
-        proxy_http_version 1.1;\n\
-        proxy_set_header Upgrade $http_upgrade;\n\
-        proxy_set_header Connection "upgrade";\n\
-        proxy_set_header Host $host;\n\
-        proxy_cache_bypass $http_upgrade;\n\
-    }\n\
-}' > /etc/nginx/conf.d/default.conf
+ENV NODE_ENV=production
 
-# Copy build files from build-stage
-COPY --from=build-stage /app/dist /usr/share/nginx/html
+RUN apt-get update && apt-get upgrade -y && rm -rf /var/lib/apt/lists/*
+
+COPY package.json ./
+RUN npm install --omit=dev --package-lock=false \
+    && rm -rf /usr/local/lib/node_modules/npm /usr/local/bin/npm /usr/local/bin/npx
+
+COPY --from=build-stage /app/dist ./dist
+COPY --from=build-stage /app/server.js ./server.js
+
+RUN rm -f package.json package-lock.json
+
+USER node
 
 EXPOSE 80
 
-# Start Nginx
-CMD ["nginx", "-g", "daemon off;"]
+CMD ["node", "server.js"]

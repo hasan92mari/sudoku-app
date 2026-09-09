@@ -1,176 +1,117 @@
-# Sudoku Microservices Application
+# Sudoku Cloud App
 
-A containerized Sudoku application built as a **training project** to practice and demonstrate modern software development and DevOps concepts.
+This project is now structured as a cloud-ready Sudoku application with:
 
-The application follows a simple **microservices architecture**, where the frontend and backend are developed and deployed as independent services.
+- React frontend with theme toggle (dark/light), language switcher (English / Arabic / German), and session-based welcome flow
+- Node.js backend with Redis-backed session handling, player bans, leaderboard persistence, and admin access via the name `admin`
+- Separate Redis data store for session and leaderboard state
+- Docker Compose setup for local development and container-based deployment
+- Multi-stage frontend Docker image for production deployment
+- GitHub Actions workflow for image publishing
+
+## Features
+
+- Player enters a name and is greeted with a personalized welcome message
+- Supports 3 languages: English, Arabic, German
+- Supports 2 visual themes: dark and light
+- Session data is stored in browser session storage and backed by Redis on the backend
+- Admin mode is enabled by entering `admin`
+- Admin can ban players for a chosen duration and view active bans
+- Players who are banned see a countdown and cannot play until the block expires
+- Leaderboard is stored in Redis sorted sets and exposed through the API
+- Frontend can be deployed as a static React build behind Nginx
 
 ## Architecture
 
-The application consists of three main components:
+- Frontend: React + Vite + Nginx
+- Backend: Node.js + Express
+- Data layer: Redis
+- Local orchestration: Docker Compose
+- Cloud deployment: Docker images + environment variables for external Redis and API endpoint
 
-- **Frontend Microservice** — React + Vite
-- **Backend Microservice** — Node.js + Express
-- **Database** — Redis
-
-Each service is containerized using **Docker** and can be deployed locally using Docker Compose or to a Kubernetes cluster using Minikube.
-
-## Technology Stack
-
-| Area | Technology |
-|---|---|
-| Frontend | React, Vite |
-| Backend | Node.js, Express |
-| Database | Redis |
-| Containerization | Docker |
-| Local Deployment | Docker Compose |
-| Orchestration | Kubernetes, Minikube |
-| CI/CD | GitHub Actions |
-| Web Server | Nginx |
-
-## DevOps & Infrastructure
-
-This project was designed to practice a complete development and deployment workflow:
-
-**Development → Docker → CI/CD → Deployment**
-
-### Docker
-
-Docker is used to package the frontend and backend services into independent containers.
-
-This provides:
-
-- Consistent environments
-- Service isolation
-- Reproducible deployments
-- Easy local development
-
-### Docker Compose
-
-Docker Compose is used to run the complete application locally, including the frontend, backend, and Redis services.
-
-### Kubernetes
-
-The application can also be deployed to Kubernetes using **Minikube**.
-
-Kubernetes is responsible for managing the application containers and providing service discovery between the different components.
-
-### CI/CD
-
-GitHub Actions is used to automate the CI/CD workflow.
-
-On every push to the `main` branch, the pipeline:
-
-1. Builds the Docker images
-2. Publishes the images to Docker Hub
-3. Makes the images available for deployment
-
-Docker images:
-
-- `hasanmar/sudoku-frontend`
-- `hasanmar/sudoku-backend`
-
-## Project Structure
+## Project structure
 
 ```text
 sudoku-app/
-├── frontend/              # React frontend microservice
-│   ├── src/
+├── frontend/
 │   ├── Dockerfile
-│   └── nginx.conf
-│
-├── backend/               # Node.js backend microservice
-│   ├── src/
-│   └── Dockerfile
-│
+│   ├── package.json
+│   ├── vite.config.js
+│   └── src/
+├── backend/
+│   ├── Dockerfile
+│   ├── index.js
+│   └── package.json
 ├── .github/
-│   └── workflows/         # GitHub Actions CI/CD
-│
-├── docker-compose.yml     # Local container orchestration
-├── sudoku-all.yaml        # Kubernetes resources
-└── README.md
+│   └── workflows/
+├── .gitignore
+├── .dockerignore
+├── .env.example
+├── docker-compose.yml
+├── sudoku-all.yaml
+├── README.md
+└── .gitignore
 ```
 
-## Running the Application
+## Local run
 
-### Prerequisites
-
-You only need:
-
-- Docker
-- Docker Compose
-
-For Kubernetes deployment:
-
-- Minikube
-- kubectl
-
-### Docker Compose
-
-Clone the repository:
+1. Copy the sample environment file:
 
 ```bash
-git clone https://github.com/HasanMariam/sudoku-app.git
-cd sudoku-app
+cp .env.example .env
 ```
 
-Start the application:
+2. Start the application with Docker Compose:
 
 ```bash
-docker compose up -d
+docker compose up --build
 ```
 
-The application will be available at:
+3. Open the app in the browser:
 
 ```text
 http://localhost
 ```
 
-To stop the application:
+4. Stop the app:
 
 ```bash
 docker compose down
 ```
 
-## Kubernetes Deployment
+## Environment variables
 
-Start Minikube:
+The sample environment file includes the most common variables:
 
-```bash
-minikube start
+```env
+PORT=5001
+REDIS_URL=redis://localhost:6379
+SESSION_TTL_SECONDS=86400
+VITE_API_BASE_URL=http://localhost:5001/api
 ```
 
-Apply the Kubernetes configuration:
+For cloud deployment, replace `REDIS_URL` and `VITE_API_BASE_URL` with the values of your managed Redis instance and deployed backend URL.
 
-```bash
-kubectl apply -f sudoku-all.yaml
-```
+## Cloud deployment notes
 
-Check the deployed resources:
+This project is designed to be deployed in separate environments.
 
-```bash
-kubectl get pods
-kubectl get services
-```
+- Backend can run on Cloud Run / Render / Railway / Fly.io
+- Redis should be provisioned separately as a managed service
+- Frontend can be built as a static site and deployed behind a CDN or container platform
+- `VITE_API_BASE_URL` must be set at build time for the frontend image
 
-Access the frontend:
+## Kubernetes
 
-```bash
-minikube service frontend-service
-```
+The included `sudoku-all.yaml` can still be used as a starting point for Kubernetes-based deployment. Update the image names and environment variables to match your registry and Redis endpoint.
 
-## Purpose
+## GitHub Actions
 
-This project was created as a practical **learning and training project** to gain hands-on experience with:
+The workflow at `.github/workflows/deploy.yml` builds and pushes the frontend and backend images to Docker Hub. Add your Docker Hub credentials as repository secrets if you want to publish images automatically.
 
-- Microservices architecture
-- React and Node.js
-- Redis
-- Docker and containerization
-- Docker Compose
-- Kubernetes
-- Minikube
-- GitHub Actions
-- CI/CD automation
-- Service networking and deployment
+## Notes
 
-The main goal is to understand how an application can move from local development to a **containerized and orchestrated environment** using modern DevOps tools.
+- Admin access is available by entering the name `admin`
+- Player bans are stored in Redis and exposed via `/api/admin/players`
+- Leaderboard rankings are stored in Redis sorted sets and available via `/api/leaderboard`
+- The frontend session is saved in the browser session storage, while the server session and ban state are saved in Redis
