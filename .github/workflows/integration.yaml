@@ -1,0 +1,134 @@
+name: Integration Tests
+
+on:
+  workflow_dispatch:
+
+  push:
+    branches:
+      - main
+      - 'feat/**'
+    paths:
+      - 'backend/**'
+      - 'frontend/**'
+      - 'docker-compose.yml'
+      - '.github/workflows/integration.yaml'
+
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'backend/**'
+      - 'frontend/**'
+      - 'docker-compose.yml'
+      - '.github/workflows/integration.yaml'
+
+jobs:
+
+  integration-test:
+    name: Full Stack Integration Test
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Start full stack with Docker Compose
+        run: |
+          docker compose up --build -d
+
+      - name: Wait for backend
+        run: |
+          for i in {1..30}; do
+            if curl --fail --silent http://localhost:5001/health; then
+              echo "Backend is ready."
+              exit 0
+            fi
+
+            echo "Waiting for backend..."
+            sleep 2
+          done
+
+          echo "Backend did not become ready."
+          docker compose ps
+          docker compose logs backend
+          exit 1
+
+      - name: Wait for frontend
+        run: |
+          for i in {1..30}; do
+            if curl --fail --silent http://localhost/health; then
+              echo "Frontend is ready."
+              exit 0
+            fi
+
+            echo "Waiting for frontend..."
+            sleep 2
+          done
+
+          echo "Frontend did not become ready."
+          docker compose ps
+          docker compose logs frontend
+          exit 1
+
+      - name: Test backend health and readiness
+        run: |
+          curl --fail-with-body http://localhost:5001/health
+          echo
+          curl --fail-with-body http://localhost:5001/ready
+
+      - name: Test frontend health and readiness
+        run: |
+          curl --fail-with-body http://localhost/health
+          echo
+          curl --fail-with-body http://localhost/ready
+
+      - name: Test frontend → backend session API
+        run: |
+          RESPONSE=$(curl --fail-with-body \
+            -X POST \
+            http://localhost:5001/api/session/enter \
+            -H 'Content-Type: application/json' \
+            -d '{"playerName":"integration-test","language":"en","theme":"dark"}')
+
+          echo "$RESPONSE"
+
+          echo "$RESPONSE" | jq -e '
+            .success == true and
+            .playerName == "integration-test"
+          ' > /dev/null
+
+      - name: Collect diagnostics
+        if: always()
+        run: |
+          {
+            echo "======================================"
+            echo "Docker Compose Services"
+            echo "======================================"
+            docker compose ps
+
+            echo
+            echo "======================================"
+            echo "Backend logs"
+            echo "======================================"
+            docker compose logs backend
+
+            echo
+            echo "======================================"
+            echo "Frontend logs"
+            echo "======================================"
+            docker compose logs frontend
+          } > integration-test-logs.log
+
+      - name: Upload integration test logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-test-${{ github.run_id }}
+          path: integration-test-logs.log
+          retention-days: 14
+
+      - name: Cleanup
+        if: always()
+        run: |
+          docker compose down -v
