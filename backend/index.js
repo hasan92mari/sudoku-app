@@ -29,10 +29,8 @@ const normalizeName = (value) => String(value || '').trim();
 const sessionKey = (playerName) => `${SESSION_PREFIX}${normalizeName(playerName).toLowerCase()}`;
 const banKey = (playerName) => `${BAN_PREFIX}${normalizeName(playerName).toLowerCase()}`;
 
-const buildSessionPayload = ({ playerName, language, theme }) => ({
+const buildSessionPayload = ({ playerName }) => ({
   playerName,
-  language,
-  theme,
   lastSeen: Date.now()
 });
 
@@ -60,8 +58,55 @@ async function initRedis() {
   }
 }
 
+const checkRedisHealth = async () => {
+  try {
+    await client.ping();
+    return true;
+  } catch (error) {
+    return false;
+  }
+};
+
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'ok', service: 'backend' });
+});
+
 app.get('/api/health', (req, res) => {
-  res.status(200).json({ status: 'ok' });
+  res.status(200).json({ status: 'ok', service: 'backend' });
+});
+
+app.get('/api/ready', async (req, res) => {
+  try {
+    const redisReady = await checkRedisHealth();
+
+    if (!redisReady) {
+      return res.status(503).json({ status: 'not-ready', service: 'backend', redis: 'disconnected' });
+    }
+
+    return res.status(200).json({ status: 'ready', service: 'backend', redis: 'connected' });
+  } catch (error) {
+    console.error('Backend ready check error:', error);
+    return res.status(503).json({ status: 'not-ready', service: 'backend', redis: 'disconnected' });
+  }
+});
+
+app.get('/heath', (req, res) => {
+  res.status(200).json({ status: 'ok', service: 'backend' });
+});
+
+app.get('/ready', async (req, res) => {
+  try {
+    const redisReady = await checkRedisHealth();
+
+    if (!redisReady) {
+      return res.status(503).json({ status: 'not-ready', service: 'backend', redis: 'disconnected' });
+    }
+
+    return res.status(200).json({ status: 'ready', service: 'backend', redis: 'connected' });
+  } catch (error) {
+    console.error('Backend ready alias error:', error);
+    return res.status(503).json({ status: 'not-ready', service: 'backend', redis: 'disconnected' });
+  }
 });
 
 app.get('/', (req, res) => {
@@ -79,9 +124,7 @@ app.post('/api/session/enter', async (req, res) => {
 
     if (normalizedPlayerName.toLowerCase() === ADMIN_NAME) {
       const payload = buildSessionPayload({
-        playerName: normalizedPlayerName,
-        language,
-        theme
+        playerName: normalizedPlayerName
       });
 
       await client.set(sessionKey(normalizedPlayerName), JSON.stringify(payload), {
@@ -118,9 +161,7 @@ app.post('/api/session/enter', async (req, res) => {
     }
 
     const payload = buildSessionPayload({
-      playerName: normalizedPlayerName,
-      language,
-      theme
+      playerName: normalizedPlayerName
     });
 
     await client.set(sessionKey(normalizedPlayerName), JSON.stringify(payload), {
