@@ -10,6 +10,8 @@ const FRONTEND_REDIS_URL = process.env.FRONTEND_REDIS_URL || 'redis://localhost:
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+app.use(express.json());
+
 const frontendRedis = createClient({ url: FRONTEND_REDIS_URL });
 frontendRedis.on('error', (error) => console.error('Frontend Redis error:', error));
 
@@ -23,6 +25,41 @@ const checkRedis = async () => {
     return false;
   }
 };
+
+app.use('/api', async (req, res) => {
+  try {
+    const backendUrl = new URL(req.originalUrl, BACKEND_BASE_URL);
+    const method = req.method || 'GET';
+
+    const headers = {};
+    if (req.headers.accept) {
+      headers.accept = req.headers.accept;
+    }
+    if (req.headers['content-type']) {
+      headers['content-type'] = req.headers['content-type'];
+    }
+
+    const backendResponse = await fetch(backendUrl, {
+      method,
+      headers,
+      body: ['GET', 'HEAD'].includes(method) ? undefined : JSON.stringify(req.body ?? {})
+    });
+
+    const responseText = await backendResponse.text();
+    const contentType = backendResponse.headers.get('content-type');
+
+    if (contentType) {
+      res.setHeader('content-type', contentType);
+    }
+
+    res.status(backendResponse.status).send(responseText);
+  } catch (error) {
+    console.error('API proxy error:', error);
+    res.status(502).json({
+      error: 'Failed to reach backend service'
+    });
+  }
+});
 
 app.use(express.static(path.join(__dirname, 'dist')));
 

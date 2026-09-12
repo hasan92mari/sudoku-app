@@ -2,7 +2,6 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: backend-deploy
-  namespace: sudoku-ns
 spec:
   replicas: 1
   selector:
