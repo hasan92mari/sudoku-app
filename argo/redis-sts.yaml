@@ -2,7 +2,6 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: redis-sts
-  namespace: sudoku-ns
 spec:
   serviceName: redis-svc
   replicas: 1
