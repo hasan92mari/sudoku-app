@@ -2,6 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: backend-deploy
+  namespace: sudoku-ns
 spec:
   replicas: 1
   selector:
@@ -13,18 +14,30 @@ spec:
         app: backend
     spec:
       containers:
-      - name: backend
-        image: ghcr.io/hasan92mari/sudoku-backend:latest
-        imagePullPolicy: Always
-        ports:
-        - containerPort: 5001
-        env:
-        - name: REDIS_URL
-          value: "redis://redis-svc:6379"
-        resources:
-          requests:
-            cpu: 100m
-            memory: 128Mi
-          limits:
-            cpu: 500m
-            memory: 512Mi
+        - name: backend
+          image: ghcr.io/hasan92mari/sudoku-backend:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 5001
+          env:
+            - name: REDIS_URL
+              value: "redis://redis-svc:6379"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 5001
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 5001
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
