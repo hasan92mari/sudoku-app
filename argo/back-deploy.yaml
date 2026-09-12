@@ -20,7 +20,7 @@ spec:
         - containerPort: 5001
         env:
         - name: REDIS_URL
-          value: "http://redis-svc.clusterscope.svc.cluster.local:6379"
+          value: "http://redis-svc:6379"
         resources:
           requests:
             cpu: 100m
