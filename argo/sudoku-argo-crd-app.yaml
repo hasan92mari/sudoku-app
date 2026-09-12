@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: app1
+  name: sudoku-app
   namespace: argocd
 spec:
   project: default
