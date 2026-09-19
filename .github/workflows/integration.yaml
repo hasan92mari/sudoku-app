@@ -2,25 +2,38 @@ name: Integration Tests
 
 on:
   workflow_dispatch:
-
-  push:
-    branches:
-      - main
-      - 'feat/**'
-    paths:
-      - 'backend/**'
-      - 'frontend/**'
-      - 'docker-compose.yml'
-      - '.github/workflows/integration.yaml'
-
-  pull_request:
-    branches:
-      - main
-    paths:
-      - 'backend/**'
-      - 'frontend/**'
-      - 'docker-compose.yml'
-      - '.github/workflows/integration.yaml'
+    inputs:
+      deploy_terraform:
+        description: "Deploy Azure infrastructure after integration tests"
+        required: true
+        default: false
+        type: boolean
+      location:
+        description: "Azure region for all infrastructure"
+        required: true
+        default: "East US"
+        type: choice
+        options:
+          - East US
+          - East US 2
+          - West US 2
+          - West Europe
+          - North Europe
+          - UAE North
+          - Sweden Central
+      vm_size:
+        description: "VM size for both scale sets"
+        required: true
+        default: "Standard_B1s"
+        type: choice
+        options:
+          - Standard_B1s
+          - Standard_B1ms
+          - Standard_B2s
+          - Standard_B2ats_v2
+          - Standard_B2als_v2
+          - Standard_D2s_v3
+          - Standard_D2als_v7
 
 jobs:
 
@@ -132,3 +145,14 @@ jobs:
         if: always()
         run: |
           docker compose down -v
+
+  terraform-apply:
+    name: Deploy Azure infrastructure
+    needs: integration-test
+    if: inputs.deploy_terraform == true
+    uses: ./.github/workflows/terraform-vm-apply.yml
+    with:
+      location: ${{ inputs.location }}
+      vm_size: ${{ inputs.vm_size }}
+    secrets: inherit
+

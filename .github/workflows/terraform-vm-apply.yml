@@ -7,7 +7,15 @@ on:
         description: "Azure region for the application resources"
         required: true
         default: "East US"
-        type: string
+        type: choice
+        options:
+          - East US
+          - East US 2
+          - West US 2
+          - West Europe
+          - North Europe
+          - UAE North
+          - Sweden Central
       project_name:
         description: "Project name used in Azure resource names"
         required: true
@@ -27,7 +35,15 @@ on:
         description: "VM size used by both scale sets"
         required: true
         default: "Standard_B1s"
-        type: string
+        type: choice
+        options:
+          - Standard_B1s
+          - Standard_B1ms
+          - Standard_B2s
+          - Standard_B2ats_v2
+          - Standard_B2als_v2
+          - Standard_D2s_v3
+          - Standard_D2als_v7
       frontend_instance_count:
         description: "Number of frontend VM instances"
         required: true
@@ -104,7 +120,7 @@ permissions:
   id-token: write
 
 concurrency:
-  group: terraform-apply
+  group: terraform-infrastructure
   cancel-in-progress: false
 
 env:
@@ -156,3 +172,11 @@ jobs:
 
       - name: Apply Terraform
         run: terraform apply -input=false -auto-approve
+  
+  terraform-destroy:
+    name: Destroy Azure infrastructure after delay
+    needs: apply
+    uses: ./.github/workflows/terraform-vm-destroy.yml
+    with:
+      confirm_destroy: true
+    secrets: inherit

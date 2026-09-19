@@ -30,8 +30,8 @@ permissions:
   id-token: write
 
 concurrency:
-  group: terraform-destroy
-  cancel-in-progress: false
+  group: terraform-infrastructure
+  cancel-in-progress: ${{ github.event_name == 'workflow_dispatch' }}
 
 env:
   TF_IN_AUTOMATION: true
@@ -70,6 +70,10 @@ jobs:
 
       - name: Validate Terraform
         run: terraform validate
+
+      - name: Wait before reusable-workflow destroy
+        if: github.event_name == 'workflow_call'
+        run: sleep 1800
 
       - name: Destroy Terraform infrastructure
         run: terraform destroy -input=false -auto-approve
