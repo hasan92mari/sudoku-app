@@ -11,3 +11,6 @@ backend/dist/
 redis-data/
 coverage/
 .vite/
+**/.terraform/
+*.tfstate*
+.terraform.lock.hcl
