@@ -1,11 +1,5 @@
 variable "location" {
-  description = "Azure region for the virtual network and compute resources"
-  type        = string
-  default     = "East US"
-}
-
-variable "redis_location" {
-  description = "Azure region for the Redis service. Use a region with available Managed Redis capacity if the default region is full."
+  description = "Azure region for all application infrastructure"
   type        = string
   default     = "East US"
 }

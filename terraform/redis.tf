@@ -1,7 +1,7 @@
 resource "azurerm_managed_redis" "main" {
   name                = "${var.project_name}-redis"
   resource_group_name = azurerm_resource_group.main.name
-  location            = var.redis_location
+  location            = var.location
 
   sku_name              = "Balanced_B0"
   public_network_access = "Disabled"

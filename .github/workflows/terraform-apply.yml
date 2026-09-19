@@ -23,11 +23,6 @@ on:
         required: true
         default: "10000"
         type: string
-      redis_location:
-        description: "Azure region for Managed Redis"
-        required: true
-        default: "East US"
-        type: string
       vm_size:
         description: "VM size used by both scale sets"
         required: true
@@ -72,10 +67,6 @@ on:
         required: false
         type: string
         default: "10000"
-      redis_location:
-        required: false
-        type: string
-        default: "East US"
       vm_size:
         required: false
         type: string
@@ -123,7 +114,6 @@ env:
   TF_VAR_project_name: ${{ inputs.project_name }}
   TF_VAR_admin_username: ${{ inputs.admin_username }}
   TF_VAR_redis_port: ${{ inputs.redis_port }}
-  TF_VAR_redis_location: ${{ inputs.redis_location }}
   TF_VAR_vm_size: ${{ inputs.vm_size }}
   TF_VAR_frontend_instance_count: ${{ inputs.frontend_instance_count }}
   TF_VAR_backend_instance_count: ${{ inputs.backend_instance_count }}
