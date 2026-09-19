@@ -1,0 +1,182 @@
+name: Terraform Apply
+
+on:
+  workflow_dispatch:
+    inputs:
+      location:
+        description: "Azure region for the application resources"
+        required: true
+        default: "East US"
+        type: choice
+        options:
+          - East US
+          - East US 2
+          - West US 2
+          - West Europe
+          - North Europe
+          - UAE North
+          - Sweden Central
+      project_name:
+        description: "Project name used in Azure resource names"
+        required: true
+        default: "sudoku"
+        type: string
+      admin_username:
+        description: "Linux administrator username"
+        required: true
+        default: "azureuser"
+        type: string
+      redis_port:
+        description: "Managed Redis port"
+        required: true
+        default: "10000"
+        type: string
+      vm_size:
+        description: "VM size used by both scale sets"
+        required: true
+        default: "Standard_B1s"
+        type: choice
+        options:
+          - Standard_B1s
+          - Standard_B1ms
+          - Standard_B2s
+          - Standard_B2ats_v2
+          - Standard_B2als_v2
+          - Standard_D2s_v3
+          - Standard_D2als_v7
+      frontend_instance_count:
+        description: "Number of frontend VM instances"
+        required: true
+        default: "1"
+        type: string
+      backend_instance_count:
+        description: "Number of backend VM instances"
+        required: true
+        default: "1"
+        type: string
+      frontend_image:
+        description: "Frontend container image"
+        required: true
+        default: "ghcr.io/hasan92mari/sudoku-frontend:latest"
+        type: string
+      backend_image:
+        description: "Backend container image"
+        required: true
+        default: "ghcr.io/hasan92mari/sudoku-backend:latest"
+        type: string
+
+  workflow_call:
+    inputs:
+      location:
+        required: false
+        type: string
+        default: "East US"
+      project_name:
+        required: false
+        type: string
+        default: "sudoku"
+      admin_username:
+        required: false
+        type: string
+        default: "azureuser"
+      redis_port:
+        required: false
+        type: string
+        default: "10000"
+      vm_size:
+        required: false
+        type: string
+        default: "Standard_B1s"
+      frontend_instance_count:
+        required: false
+        type: string
+        default: "1"
+      backend_instance_count:
+        required: false
+        type: string
+        default: "1"
+      frontend_image:
+        required: false
+        type: string
+        default: "ghcr.io/hasan92mari/sudoku-frontend:latest"
+      backend_image:
+        required: false
+        type: string
+        default: "ghcr.io/hasan92mari/sudoku-backend:latest"
+    secrets:
+      AZURE_CLIENT_ID:
+        required: true
+      AZURE_TENANT_ID:
+        required: true
+      AZURE_SUBSCRIPTION_ID:
+        required: true
+      ADMIN_SSH_PUBLIC_KEY:
+        required: true
+      REDIS_PRIMARY_KEY:
+        required: false
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: terraform-infrastructure
+  cancel-in-progress: false
+
+env:
+  TF_IN_AUTOMATION: true
+  TF_INPUT: false
+  TF_VAR_location: ${{ inputs.location }}
+  TF_VAR_project_name: ${{ inputs.project_name }}
+  TF_VAR_admin_username: ${{ inputs.admin_username }}
+  TF_VAR_redis_port: ${{ inputs.redis_port }}
+  TF_VAR_vm_size: ${{ inputs.vm_size }}
+  TF_VAR_frontend_instance_count: ${{ inputs.frontend_instance_count }}
+  TF_VAR_backend_instance_count: ${{ inputs.backend_instance_count }}
+  TF_VAR_frontend_image: ${{ inputs.frontend_image }}
+  TF_VAR_backend_image: ${{ inputs.backend_image }}
+  TF_VAR_admin_ssh_public_key: ${{ secrets.ADMIN_SSH_PUBLIC_KEY }}
+  TF_VAR_redis_primary_key: ${{ secrets.REDIS_PRIMARY_KEY }}
+  ARM_USE_OIDC: true
+  ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+  ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+  ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+jobs:
+  apply:
+    name: Apply Terraform infrastructure
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: terraform
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Log in to Azure
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Initialize Terraform
+        run: terraform init -input=false
+
+      - name: Validate Terraform
+        run: terraform validate
+
+      - name: Apply Terraform
+        run: terraform apply -input=false -auto-approve
+  
+  terraform-destroy:
+    name: Destroy Azure infrastructure after delay
+    needs: apply
+    uses: ./.github/workflows/terraform-vm-destroy.yml
+    with:
+      confirm_destroy: true
+    secrets: inherit
