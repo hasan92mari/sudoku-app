@@ -119,9 +119,9 @@ permissions:
   contents: read
   id-token: write
 
-concurrency:
-  group: terraform-infrastructure
-  cancel-in-progress: false
+# concurrency:
+#   group: terraform-infrastructure
+#   cancel-in-progress: false
 
 env:
   TF_IN_AUTOMATION: true
