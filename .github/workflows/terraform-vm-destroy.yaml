@@ -19,7 +19,7 @@ permissions:
 
 concurrency:
   group: terraform-infrastructure
-  cancel-in-progress: ${{ github.event_name == 'workflow_dispatch' }}
+  cancel-in-progress: true
 
 env:
   TF_IN_AUTOMATION: true
