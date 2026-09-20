@@ -35,5 +35,9 @@ output "frontend_url" {
 }
 
 output "backend_private_load_balancer_ip" {
-  value = "10.0.2.10"
+  value = azurerm_lb.backend.frontend_ip_configuration[0].private_ip_address
+}
+
+output "backend_private_load_balancer_url" {
+  value = "http://${azurerm_lb.backend.frontend_ip_configuration[0].private_ip_address}:5001"
 }

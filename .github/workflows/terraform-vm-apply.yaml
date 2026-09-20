@@ -1,4 +1,4 @@
-name: Terraform Apply
+name: Terraform VM-Apply
 
 on:
   workflow_dispatch:
@@ -174,9 +174,7 @@ jobs:
         run: terraform apply -input=false -auto-approve
   
   terraform-destroy:
-    name: Destroy Azure infrastructure after delay
+    name: Destroy Azure infrastructure
     needs: apply
-    uses: ./.github/workflows/terraform-vm-destroy.yml
-    with:
-      confirm_destroy: true
+    uses: ./.github/workflows/terraform-vm-destroy.yaml
     secrets: inherit

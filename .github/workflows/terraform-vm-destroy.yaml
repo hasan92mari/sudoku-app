@@ -1,20 +1,8 @@
-name: Terraform Destroy
+name: Terraform VM-Destroy
 
 on:
   workflow_dispatch:
-    inputs:
-      confirm_destroy:
-        description: "Type true to permanently destroy all Terraform-managed infrastructure"
-        required: true
-        default: false
-        type: boolean
-
   workflow_call:
-    inputs:
-      confirm_destroy:
-        required: true
-        type: boolean
-        default: false
     secrets:
       AZURE_CLIENT_ID:
         required: true
@@ -45,7 +33,6 @@ env:
 jobs:
   destroy:
     name: Destroy Terraform infrastructure
-    if: inputs.confirm_destroy == true
     runs-on: ubuntu-latest
     defaults:
       run:

@@ -34,6 +34,41 @@ on:
           - Standard_B2als_v2
           - Standard_D2s_v3
           - Standard_D2als_v7
+      project_name:
+        description: "Project name used in Azure resource names"
+        required: true
+        default: "sudoku"
+        type: string
+      admin_username:
+        description: "Linux administrator username"
+        required: true
+        default: "azureuser"
+        type: string
+      redis_port:
+        description: "Managed Redis port"
+        required: true
+        default: "10000"
+        type: string
+      frontend_instance_count:
+        description: "Number of frontend VM instances"
+        required: true
+        default: "1"
+        type: string
+      backend_instance_count:
+        description: "Number of backend VM instances"
+        required: true
+        default: "1"
+        type: string
+      frontend_image:
+        description: "Frontend container image"
+        required: true
+        default: "ghcr.io/hasan92mari/sudoku-frontend:latest"
+        type: string
+      backend_image:
+        description: "Backend container image"
+        required: true
+        default: "ghcr.io/hasan92mari/sudoku-backend:latest"
+        type: string
 
 jobs:
 
@@ -150,9 +185,16 @@ jobs:
     name: Deploy Azure infrastructure
     needs: integration-test
     if: inputs.deploy_terraform == true
-    uses: ./.github/workflows/terraform-vm-apply.yml
+    uses: ./.github/workflows/terraform-vm-apply.yaml
     with:
       location: ${{ inputs.location }}
+      project_name: ${{ inputs.project_name }}
+      admin_username: ${{ inputs.admin_username }}
+      redis_port: ${{ inputs.redis_port }}
       vm_size: ${{ inputs.vm_size }}
+      frontend_instance_count: ${{ inputs.frontend_instance_count }}
+      backend_instance_count: ${{ inputs.backend_instance_count }}
+      frontend_image: ${{ inputs.frontend_image }}
+      backend_image: ${{ inputs.backend_image }}
     secrets: inherit
 
