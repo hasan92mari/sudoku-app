@@ -1,5 +1,6 @@
 locals {
-  redis_url = var.redis_primary_key != "" ? "rediss://:${urlencode(var.redis_primary_key)}@${azurerm_managed_redis.main.hostname}:${var.redis_port}" : "rediss://${azurerm_managed_redis.main.hostname}:${var.redis_port}"
+  redis_url         = var.redis_primary_key != "" ? "rediss://:${urlencode(var.redis_primary_key)}@${azurerm_managed_redis.main.hostname}:${var.redis_port}" : "rediss://${azurerm_managed_redis.main.hostname}:${var.redis_port}"
+  backend_base_url  = "http://${azurerm_lb.backend.frontend_ip_configuration[0].private_ip_address}:5001"
 }
 
 resource "azurerm_linux_virtual_machine_scale_set" "frontend" {
@@ -47,7 +48,7 @@ resource "azurerm_linux_virtual_machine_scale_set" "frontend" {
       - apt-get install -y docker.io
       - systemctl enable --now docker
       - docker pull ${var.frontend_image}
-      - docker run -d --restart unless-stopped --name frontend -p 80:80 -e BACKEND_BASE_URL=http://10.0.2.10:5001 -e FRONTEND_REDIS_URL=${local.redis_url} ${var.frontend_image}
+      - docker run -d --restart unless-stopped --name frontend -p 80:80 -e BACKEND_BASE_URL=${local.backend_base_url} -e FRONTEND_REDIS_URL=${local.redis_url} ${var.frontend_image}
   CLOUD_INIT
   )
 }
