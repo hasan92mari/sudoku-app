@@ -136,7 +136,6 @@ env:
   TF_VAR_frontend_image: ${{ inputs.frontend_image }}
   TF_VAR_backend_image: ${{ inputs.backend_image }}
   TF_VAR_admin_ssh_public_key: ${{ secrets.ADMIN_SSH_PUBLIC_KEY }}
-  TF_VAR_redis_primary_key: ${{ secrets.REDIS_PRIMARY_KEY }}
   ARM_USE_OIDC: true
   ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
   ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
