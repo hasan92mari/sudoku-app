@@ -10,12 +10,6 @@ variable "redis_port" {
   default     = 10000
 }
 
-variable "redis_primary_key" {
-  description = "Primary access key for Azure Managed Redis. If empty, the generated Redis URL is left without credentials until you provide the key."
-  type        = string
-  default     = ""
-  sensitive   = true
-}
 
 variable "project_name" {
   description = "Project name"

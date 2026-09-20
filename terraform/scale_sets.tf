@@ -1,6 +1,7 @@
 locals {
-  redis_url         = var.redis_primary_key != "" ? "rediss://:${urlencode(var.redis_primary_key)}@${azurerm_managed_redis.main.hostname}:${var.redis_port}" : "rediss://${azurerm_managed_redis.main.hostname}:${var.redis_port}"
-  backend_base_url  = "http://${azurerm_lb.backend.frontend_ip_configuration[0].private_ip_address}:5001"
+  redis_url = "rediss://:${urlencode(azurerm_managed_redis.main.default_database[0].primary_access_key)}@${azurerm_managed_redis.main.hostname}:${azurerm_managed_redis.main.default_database[0].port}"
+
+  backend_base_url = "http://${azurerm_lb.backend.frontend_ip_configuration[0].private_ip_address}:5001"
 }
 
 resource "azurerm_linux_virtual_machine_scale_set" "frontend" {
