@@ -1,5 +1,9 @@
 name: Integration Tests
 
+permissions:
+  contents: read
+  id-token: write
+
 on:
   workflow_dispatch:
     inputs:
@@ -197,4 +201,3 @@ jobs:
       frontend_image: ${{ inputs.frontend_image }}
       backend_image: ${{ inputs.backend_image }}
     secrets: inherit
-

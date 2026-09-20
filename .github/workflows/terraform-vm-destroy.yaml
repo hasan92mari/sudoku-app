@@ -2,7 +2,19 @@ name: Terraform VM-Destroy
 
 on:
   workflow_dispatch:
+    inputs:
+      wait_seconds:
+        description: "Seconds to wait before destroying the infrastructure"
+        required: false
+        default: "0"
+        type: string
   workflow_call:
+    inputs:
+      wait_seconds:
+        description: "Seconds to wait before destroying the infrastructure"
+        required: false
+        default: 0
+        type: number
     secrets:
       AZURE_CLIENT_ID:
         required: true
@@ -29,6 +41,7 @@ env:
   ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
   ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
   TF_VAR_admin_ssh_public_key: ${{ secrets.ADMIN_SSH_PUBLIC_KEY }}
+  WAIT_SECONDS: ${{ inputs.wait_seconds }}
 
 jobs:
   destroy:
@@ -58,9 +71,19 @@ jobs:
       - name: Validate Terraform
         run: terraform validate
 
-      - name: Wait before reusable-workflow destroy
-        if: github.event_name == 'workflow_call'
-        run: sleep 1800
+      - name: Wait before destroy
+        run: |
+          case "$WAIT_SECONDS" in
+            ''|*[!0-9]*)
+              echo "wait_seconds must be a non-negative integer."
+              exit 1
+              ;;
+          esac
+
+          if [ "$WAIT_SECONDS" -gt 0 ]; then
+            echo "Waiting $WAIT_SECONDS seconds before destroy."
+            sleep "$WAIT_SECONDS"
+          fi
 
       - name: Destroy Terraform infrastructure
         run: terraform destroy -input=false -auto-approve
