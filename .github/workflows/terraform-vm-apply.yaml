@@ -173,8 +173,17 @@ jobs:
       - name: Apply Terraform
         run: terraform apply -input=false -auto-approve
   
+  terraform-wait:
+    name: Keep development environment alive
+    needs: apply
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Wait 30 minutes
+        run: sleep 1800
+
   terraform-destroy:
     name: Destroy Azure infrastructure
-    needs: apply
+    needs: terraform-wait
     uses: ./.github/workflows/terraform-vm-destroy.yaml
     secrets: inherit
