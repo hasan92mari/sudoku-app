@@ -50,7 +50,7 @@ resource "azurerm_network_security_group" "backend" {
     protocol                   = "Tcp"
     source_port_range          = "*"
     destination_port_range     = "5001"
-    source_address_prefix      = "10.0.1.0/24"
+    source_address_prefix      = "VirtualNetwork"
     destination_address_prefix = "*"
   }
 
