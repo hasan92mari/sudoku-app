@@ -9,8 +9,8 @@ terraform {
   }
 
   backend "azurerm" {
-    resource_group_name  = "sudoku-tfstate-rg"
-    storage_account_name = "sudokutfstate18068"
+    resource_group_name  = "tfstate-rg"
+    storage_account_name = "tfstate893265"
     container_name       = "tfstate"
     key                  = "sudoku-infra.tfstate"
   }
