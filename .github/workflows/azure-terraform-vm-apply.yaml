@@ -1,4 +1,4 @@
-name: Terraform VM-Apply
+name: Azure Terraform VM-Apply
 
 on:
   workflow_dispatch:
@@ -147,7 +147,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: terraform
+        working-directory: terraform/azure
 
     steps:
       - name: Checkout repository
@@ -172,10 +172,10 @@ jobs:
       - name: Apply Terraform
         run: terraform apply -input=false -auto-approve
   
-  terraform-destroy:
+  azure-terraform-destroy:
     name: Destroy Azure infrastructure
     needs: apply
-    uses: ./.github/workflows/terraform-vm-destroy.yaml
+    uses: ./.github/workflows/azure-terraform-vm-destroy.yaml
     with:
       wait_seconds: 1800
     secrets: inherit

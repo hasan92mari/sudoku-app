@@ -1,0 +1,123 @@
+name: AWS Terraform Apply
+
+on:
+  workflow_dispatch:
+    inputs:
+      aws_region:
+        description: "AWS region for the application resources"
+        required: true
+        default: "us-east-1"
+        type: string
+      state_bucket:
+        description: "Globally unique S3 bucket name for Terraform state"
+        required: true
+        type: string
+      project_name:
+        description: "Project name used in AWS resource names and Terraform state key"
+        required: true
+        default: "sudoku"
+        type: string
+      instance_type:
+        description: "EC2 instance type for frontend and backend"
+        required: true
+        default: "t3.micro"
+        type: choice
+        options:
+          - t3.micro
+          - t3.small
+          - t3.medium
+      redis_node_type:
+        description: "ElastiCache node type"
+        required: true
+        default: "cache.t3.micro"
+        type: string
+      frontend_instance_count:
+        description: "Number of frontend EC2 instances"
+        required: true
+        default: "1"
+        type: string
+      backend_instance_count:
+        description: "Number of backend EC2 instances"
+        required: true
+        default: "1"
+        type: string
+      frontend_image:
+        description: "Frontend container image"
+        required: true
+        default: "ghcr.io/hasan92mari/sudoku-frontend:latest"
+        type: string
+      backend_image:
+        description: "Backend container image"
+        required: true
+        default: "ghcr.io/hasan92mari/sudoku-backend:latest"
+        type: string
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  apply:
+    name: Apply AWS Terraform infrastructure
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: terraform/aws
+    env:
+      AWS_REGION: ${{ inputs.aws_region }}
+      TF_STATE_BUCKET: ${{ inputs.state_bucket }}
+      PROJECT_NAME: ${{ inputs.project_name }}
+      TF_IN_AUTOMATION: "true"
+      TF_INPUT: "false"
+      TF_VAR_aws_region: ${{ inputs.aws_region }}
+      TF_VAR_project_name: ${{ inputs.project_name }}
+      TF_VAR_admin_ssh_public_key: ${{ secrets.ADMIN_SSH_PUBLIC_KEY }}
+      TF_VAR_instance_type: ${{ inputs.instance_type }}
+      TF_VAR_redis_node_type: ${{ inputs.redis_node_type }}
+      TF_VAR_frontend_instance_count: ${{ inputs.frontend_instance_count }}
+      TF_VAR_backend_instance_count: ${{ inputs.backend_instance_count }}
+      TF_VAR_frontend_image: ${{ inputs.frontend_image }}
+      TF_VAR_backend_image: ${{ inputs.backend_image }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Configure AWS credentials with OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          aws-region: ${{ inputs.aws_region }}
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.10.5
+
+      - name: Prepare Terraform state bucket
+        run: bash ./prepare-state-bucket.sh
+
+      - name: Initialize Terraform
+        run: |
+          terraform init -input=false \
+            -backend-config="bucket=$TF_STATE_BUCKET" \
+            -backend-config="key=$PROJECT_NAME/aws/terraform.tfstate" \
+            -backend-config="region=$AWS_REGION" \
+            -backend-config="encrypt=true" \
+            -backend-config="use_lockfile=true"
+
+      - name: Validate Terraform
+        run: terraform validate
+
+      - name: Apply Terraform
+        run: terraform apply -input=false -auto-approve
+
+  destroy-after-demo:
+    name: Destroy AWS infrastructure after 30 minutes
+    needs: apply
+    uses: ./.github/workflows/aws-terraform-destroy.yaml
+    with:
+      aws_region: ${{ inputs.aws_region }}
+      state_bucket: ${{ inputs.state_bucket }}
+      project_name: ${{ inputs.project_name }}
+      wait_seconds: 1800
+    secrets: inherit

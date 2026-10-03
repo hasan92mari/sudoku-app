@@ -42,6 +42,17 @@ resource "azurerm_lb_rule" "frontend" {
   probe_id                       = azurerm_lb_probe.frontend.id
 }
 
+resource "azurerm_lb_nat_pool" "frontend_ssh" {
+  name                           = "frontend-ssh"
+  resource_group_name            = azurerm_resource_group.main.name
+  loadbalancer_id                = azurerm_lb.frontend.id
+  protocol                       = "Tcp"
+  frontend_port_start            = 50000
+  frontend_port_end              = 50000 + var.frontend_instance_count - 1
+  backend_port                   = 22
+  frontend_ip_configuration_name = "public"
+}
+
 resource "azurerm_lb" "backend" {
   name                = "${var.project_name}-backend-lb"
   location            = azurerm_resource_group.main.location

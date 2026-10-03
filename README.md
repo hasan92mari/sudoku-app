@@ -109,6 +109,19 @@ The included `sudoku-all.yaml` can still be used as a starting point for Kuberne
 
 The workflow at `.github/workflows/deploy.yml` builds and pushes the frontend and backend images to Docker Hub. Add your Docker Hub credentials as repository secrets if you want to publish images automatically.
 
+## AWS Terraform
+
+The AWS infrastructure is defined in `terraform/aws` and mirrors the Azure deployment with EC2 Auto Scaling groups, public and internal load balancers, private ElastiCache Redis, and network security groups.
+
+Configure GitHub OIDC for an AWS role and add these repository secrets:
+
+- `AWS_ROLE_TO_ASSUME`: ARN of the role trusted by this repository's GitHub OIDC identity. It needs permissions to manage the VPC, EC2, load balancers, ElastiCache, and the Terraform state bucket.
+- `ADMIN_SSH_PUBLIC_KEY`: public SSH key installed on the instances.
+
+Run `.github/workflows/aws-terraform-apply.yaml` manually and provide a globally unique S3 state bucket name in the selected AWS region. The workflow creates the bucket if needed, enables encryption, versioning, and public-access blocking, then applies Terraform. Keep the bucket and use the same region, project name, and bucket when running `.github/workflows/aws-terraform-destroy.yaml`; the state bucket itself is intentionally retained. The apply workflow calls destroy automatically after 30 minutes, and the destroy workflow can also be started manually.
+
+The frontend is reachable through the public HTTP load balancer. SSH is open to the internet on port `50000` through a network load balancer; Terraform prints the command as `frontend_ssh_command`. The backend and Redis remain private. The NAT gateway, load balancers, EC2 instances, and ElastiCache incur AWS charges while deployed.
+
 ## Notes
 
 - Admin access is available by entering the name `admin`

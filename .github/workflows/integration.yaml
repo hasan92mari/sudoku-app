@@ -185,11 +185,11 @@ jobs:
         run: |
           docker compose down -v
 
-  terraform-apply:
+  azure-terraform-apply:
     name: Deploy Azure infrastructure
     needs: integration-test
     if: inputs.deploy_terraform == true
-    uses: ./.github/workflows/terraform-vm-apply.yaml
+    uses: ./.github/workflows/azure-terraform-vm-apply.yaml
     with:
       location: ${{ inputs.location }}
       project_name: ${{ inputs.project_name }}

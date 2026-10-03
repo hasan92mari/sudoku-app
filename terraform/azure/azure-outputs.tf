@@ -30,6 +30,10 @@ output "frontend_public_ip" {
   value = azurerm_public_ip.frontend.ip_address
 }
 
+output "frontend_ssh_command" {
+  value = "ssh -p 50000 ${var.admin_username}@${azurerm_public_ip.frontend.ip_address}"
+}
+
 output "frontend_url" {
   value = "http://${azurerm_public_ip.frontend.ip_address}"
 }
