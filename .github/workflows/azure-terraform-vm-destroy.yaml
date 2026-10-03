@@ -1,4 +1,4 @@
-name: Terraform VM-Destroy
+name: Azure Terraform VM-Destroy
 
 on:
   workflow_dispatch:
@@ -49,7 +49,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: terraform
+        working-directory: terraform/azure
 
     steps:
       - name: Checkout repository

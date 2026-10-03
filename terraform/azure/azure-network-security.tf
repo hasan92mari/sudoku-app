@@ -27,7 +27,19 @@ resource "azurerm_network_security_group" "frontend" {
     protocol                   = "Tcp"
     source_port_range          = "*"
     destination_port_range     = "80"
-    source_address_prefix     = "Internet"
+    source_address_prefix      = "Internet"
+    destination_address_prefix = "*"
+  }
+
+  security_rule {
+    name                       = "allow-ssh-from-internet"
+    priority                   = 120
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_range     = "22"
+    source_address_prefix      = "Internet"
     destination_address_prefix = "*"
   }
 }
@@ -63,6 +75,18 @@ resource "azurerm_network_security_group" "backend" {
     source_port_range          = "*"
     destination_port_range     = "5001"
     source_address_prefix      = "AzureLoadBalancer"
+    destination_address_prefix = "*"
+  }
+
+  security_rule {
+    name                       = "allow-ssh-from-frontend"
+    priority                   = 120
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_range     = "22"
+    source_address_prefix      = azurerm_subnet.frontend.address_prefixes[0]
     destination_address_prefix = "*"
   }
 }
