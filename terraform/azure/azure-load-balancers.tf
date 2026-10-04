@@ -48,7 +48,7 @@ resource "azurerm_lb_nat_pool" "frontend_ssh" {
   loadbalancer_id                = azurerm_lb.frontend.id
   protocol                       = "Tcp"
   frontend_port_start            = 50000
-  frontend_port_end              = 50000 + var.frontend_instance_count - 1
+  frontend_port_end              = 50000 + max(var.frontend_instance_count, 2) - 1
   backend_port                   = 22
   frontend_ip_configuration_name = "public"
 }
